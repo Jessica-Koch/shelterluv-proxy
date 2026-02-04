@@ -44,22 +44,25 @@ exports.handler = async function (event, context) {
 
     const data = await response.json();
 
-    const dogs = data.animals
+    // Filter for dogs with "Healthy in Home" status
+    const adoptedDogs = data.animals
       ? data.animals.filter(
           (animal) =>
-            animal.Type === 'Dog' ||
-            animal.Species === 'Dog' ||
-            animal.species === 'Dog'
+            (animal.Type === 'Dog' ||
+              animal.Species === 'Dog' ||
+              animal.species === 'Dog') &&
+            animal.Status === 'Healthy in Home'
         )
       : [];
+
     return {
       statusCode: 200,
       headers,
       body: JSON.stringify({
         success: true,
-        count: dogs.length,
+        count: adoptedDogs.length,
         total_count: data.total_count || null,
-        dogs: dogs,
+        dogs: adoptedDogs,
       }),
     };
   } catch (error) {
