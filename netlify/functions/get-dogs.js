@@ -27,7 +27,6 @@ exports.handler = async function (event, context) {
     let hasMore = true;
     let pageCount = 0;
 
-    // Keep fetching until has_more is false
     while (hasMore) {
       pageCount++;
       const url = new URL('https://new.shelterluv.com/api/v1/animals');
@@ -57,7 +56,6 @@ exports.handler = async function (event, context) {
         allAnimals = allAnimals.concat(data.animals);
       }
 
-      // Use the has_more field to determine if we should continue
       hasMore = data.has_more === true;
       
       if (hasMore) {
@@ -67,32 +65,26 @@ exports.handler = async function (event, context) {
 
     console.log(`Total animals fetched: ${allAnimals.length}`);
 
-    // Filter for dogs with "Healthy in Home" status
+    // Filter for adopted dogs:
+    // - Must be a dog
+    // - Status must be "Healthy in Home"
+    // - Must have a LastIntakeUnixTime (null indicates deceased/inactive)
     const adoptedDogs = allAnimals.filter(
-      (animal) =>
-        (animal.Type === 'Dog' ||
-          animal.Species === 'Dog' ||
-          animal.species === 'Dog') &&
-        animal.Status === 'Healthy in Home'
+      (animal) => {
+        const isDog = animal.Type === 'Dog' || 
+                      animal.Species === 'Dog' || 
+                      animal.species === 'Dog';
+        
+        const isHealthyInHome = animal.Status === 'Healthy in Home';
+        
+        const hasIntakeTime = animal.LastIntakeUnixTime !== null && 
+                             animal.LastIntakeUnixTime !== undefined;
+        
+        return isDog && isHealthyInHome && hasIntakeTime;
+      }
     );
 
-    console.log(`Adopted dogs (Healthy in Home): ${adoptedDogs.length}`);
-
-    // Let's also see what other statuses exist for dogs
-    const allDogs = allAnimals.filter(
-      (animal) =>
-        animal.Type === 'Dog' ||
-        animal.Species === 'Dog' ||
-        animal.species === 'Dog'
-    );
-    
-    const statusCounts = {};
-    allDogs.forEach(dog => {
-      const status = dog.Status || 'No Status';
-      statusCounts[status] = (statusCounts[status] || 0) + 1;
-    });
-    
-    console.log('Dog status breakdown:', statusCounts);
+    console.log(`Adopted dogs (Healthy in Home with intake time): ${adoptedDogs.length}`);
 
     return {
       statusCode: 200,
@@ -101,9 +93,7 @@ exports.handler = async function (event, context) {
         success: true,
         count: adoptedDogs.length,
         total_animals_fetched: allAnimals.length,
-        total_dogs: allDogs.length,
         pages_fetched: pageCount,
-        status_breakdown: statusCounts,
         dogs: adoptedDogs,
       }),
     };
