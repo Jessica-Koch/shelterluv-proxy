@@ -15,7 +15,7 @@ exports.handler = async function (event, context) {
   }
 
   try {
-    const apiToken = process.env.SHELTERLUV_API_KEY;
+    const apiKey = process.env.SHELTERLUV_API_KEY;
 
     if (!apiKey) {
       throw new Error('API key not configured');
@@ -31,7 +31,7 @@ exports.handler = async function (event, context) {
 
     const response = await fetch(url.toString(), {
       headers: {
-        Authorization: `Bearer ${apiToken}`,
+        Authorization: `Bearer ${apiKey}`,
       },
     });
 
