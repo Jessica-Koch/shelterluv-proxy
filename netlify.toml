@@ -3,3 +3,6 @@
 
 [functions]
   node_bundler = "esbuild"
+
+[functions."sync-shopify-contacts"]
+  schedule = "@daily"
