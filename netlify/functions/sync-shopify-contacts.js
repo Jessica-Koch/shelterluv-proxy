@@ -49,8 +49,6 @@ exports.handler = async function () {
   const summary = { total: customers.length, created, updated, skipped, failed };
   console.log('Sync complete:', summary);
 
-  return {
-    statusCode: 200,
-    body: JSON.stringify({ ok: true, ...summary }),
-  };
+  // Scheduled functions have no caller to read a response body, so return none.
+  return { statusCode: 200 };
 };
