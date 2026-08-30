@@ -29,11 +29,23 @@ exports.handler = async function () {
       continue;
     }
 
+    // Guest-checkout customers often have no account-level name, but the
+    // address they checked out with usually does.
+    const address = customer.default_address || (customer.addresses || [])[0] || {};
+    const firstName = customer.first_name || address.first_name;
+    const lastName = customer.last_name || address.last_name;
+
+    if (!firstName || !lastName) {
+      console.warn(`Skipping ${email}: no name available from Shopify (Givebutter requires one)`);
+      skipped++;
+      continue;
+    }
+
     try {
       const { action } = await upsertContactByEmail(givebutterKey, {
         email,
-        firstName: customer.first_name,
-        lastName: customer.last_name,
+        firstName,
+        lastName,
         phone: customer.phone,
         externalId: `shopify:${customer.id}`,
         tags: ['Shopify'],
