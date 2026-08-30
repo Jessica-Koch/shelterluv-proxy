@@ -1,54 +1,20 @@
+const { fetchAllCustomers } = require('../../lib/shopify');
 const { upsertContactByEmail } = require('../../lib/givebutter');
 
-const SHOPIFY_API_VERSION = '2024-10';
-
-function parseNextLink(linkHeader) {
-  if (!linkHeader) return null;
-
-  for (const part of linkHeader.split(',')) {
-    const [urlPart, relPart] = part.split(';').map((s) => s.trim());
-    if (relPart === 'rel="next"') {
-      return urlPart.slice(1, -1); // strip surrounding < >
-    }
-  }
-
-  return null;
-}
-
-async function fetchAllShopifyCustomers(shopDomain, accessToken) {
-  const customers = [];
-  let url = `https://${shopDomain}/admin/api/${SHOPIFY_API_VERSION}/customers.json?limit=250`;
-
-  while (url) {
-    const res = await fetch(url, {
-      headers: { 'X-Shopify-Access-Token': accessToken },
-    });
-
-    if (!res.ok) {
-      throw new Error(`Shopify API error: ${res.status} ${await res.text()}`);
-    }
-
-    const data = await res.json();
-    customers.push(...(data.customers || []));
-    url = parseNextLink(res.headers.get('link'));
-  }
-
-  return customers;
-}
-
 exports.handler = async function () {
-  const shopDomain = process.env.SHOPIFY_STORE_DOMAIN;
-  const shopifyToken = process.env.SHOPIFY_ACCESS_TOKEN;
+  const shop = process.env.SHOPIFY_SHOP;
+  const clientId = process.env.SHOPIFY_CLIENT_ID;
+  const clientSecret = process.env.SHOPIFY_CLIENT_SECRET;
   const givebutterKey = process.env.GIVEBUTTER_API_KEY;
 
-  if (!shopDomain || !shopifyToken) {
-    throw new Error('SHOPIFY_STORE_DOMAIN / SHOPIFY_ACCESS_TOKEN not configured');
+  if (!shop || !clientId || !clientSecret) {
+    throw new Error('SHOPIFY_SHOP / SHOPIFY_CLIENT_ID / SHOPIFY_CLIENT_SECRET not configured');
   }
   if (!givebutterKey) {
     throw new Error('GIVEBUTTER_API_KEY not configured');
   }
 
-  const customers = await fetchAllShopifyCustomers(shopDomain, shopifyToken);
+  const customers = await fetchAllCustomers(shop, clientId, clientSecret);
   console.log(`Fetched ${customers.length} Shopify customers`);
 
   let created = 0;
