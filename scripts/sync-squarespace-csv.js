@@ -10,21 +10,8 @@ try {
 
 const fs = require('fs');
 const path = require('path');
-const { parse } = require('csv-parse/sync');
+const { parseContactsCsv } = require('../lib/squarespaceContacts');
 const { upsertContactByEmail } = require('../lib/givebutter');
-
-const COLUMN_CANDIDATES = {
-  email: ['email', 'e-mail', 'email address'],
-  firstName: ['first name', 'firstname'],
-  lastName: ['last name', 'lastname'],
-  contactId: ['contact id', 'id'],
-};
-
-function findColumn(row, candidates) {
-  const keys = Object.keys(row);
-  const match = keys.find((k) => candidates.includes(k.trim().toLowerCase()));
-  return match ? row[match] : undefined;
-}
 
 async function main() {
   const csvPath = process.argv[2];
@@ -40,31 +27,25 @@ async function main() {
   }
 
   const raw = fs.readFileSync(path.resolve(csvPath), 'utf8');
-  const rows = parse(raw, { columns: true, skip_empty_lines: true, trim: true });
+  const contacts = parseContactsCsv(raw);
 
-  if (rows.length === 0) {
+  if (contacts.length === 0) {
     console.error('No rows found in CSV');
     process.exit(1);
   }
 
-  console.log(`Parsed ${rows.length} rows from ${csvPath}`);
-  console.log('Detected columns:', Object.keys(rows[0]).join(', '));
+  console.log(`Parsed ${contacts.length} rows from ${csvPath}`);
 
   let created = 0;
   let updated = 0;
   let skipped = 0;
   let failed = 0;
 
-  for (const row of rows) {
-    const email = findColumn(row, COLUMN_CANDIDATES.email);
+  for (const { email, firstName, lastName, contactId } of contacts) {
     if (!email) {
       skipped++;
       continue;
     }
-
-    const firstName = findColumn(row, COLUMN_CANDIDATES.firstName);
-    const lastName = findColumn(row, COLUMN_CANDIDATES.lastName);
-    const contactId = findColumn(row, COLUMN_CANDIDATES.contactId);
 
     try {
       const { action } = await upsertContactByEmail(givebutterKey, {

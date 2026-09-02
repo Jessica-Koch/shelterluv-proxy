@@ -6,3 +6,6 @@
 
 [functions."sync-shopify-contacts"]
   schedule = "@daily"
+
+[functions."sync-squarespace-contacts"]
+  schedule = "@daily"
