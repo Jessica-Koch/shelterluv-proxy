@@ -49,6 +49,12 @@ exports.handler = async function () {
         phone: customer.phone,
         externalId: `shopify:${customer.id}`,
         tags: ['Shopify'],
+        address1: address.address1,
+        address2: address.address2,
+        city: address.city,
+        state: address.province,
+        zipcode: address.zip,
+        country: address.country_code || address.country,
       });
       if (action === 'created') created++;
       else updated++;
